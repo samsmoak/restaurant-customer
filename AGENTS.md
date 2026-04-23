@@ -11,7 +11,7 @@ This project has two parallel data layers:
 - **Go backend (active going forward)**: `lib/api/` + `lib/stores/*.store.ts`.
   - Typed client + DTOs + endpoints: [lib/api/client.ts](lib/api/client.ts), [lib/api/dto.ts](lib/api/dto.ts), [lib/api/endpoints.ts](lib/api/endpoints.ts).
   - Zustand stores, one file per store: `cart.store.ts`, `auth.store.ts`, `menu.store.ts`, `orders.store.ts`, `restaurant.store.ts`, `profile.store.ts`, `checkout.store.ts`.
-  - Env: `NEXT_PUBLIC_API_URL` points at the Go backend. `NEXT_PUBLIC_RESTAURANT_SLUG` selects the tenant this deployment serves. All tenant-scoped calls go through `tenantPath("/…")` which expands to `/api/r/:slug/…`.
+  - Env: `NEXT_PUBLIC_API_URL` points at the Go backend. `NEXT_PUBLIC_RESTAURANT_ID` pins this deployment 1:1 to a restaurant (its ObjectID hex). All tenant-scoped calls go through `tenantPath("/…")` which expands to `/api/r/:restaurant_id/…`.
   - Auth token is stored under localStorage key `rs_auth_token`.
 
 - **Supabase (legacy, still wired)**: `lib/supabase/*` + `lib/hooks/*.supabase.ts`.

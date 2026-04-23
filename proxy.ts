@@ -1,8 +1,12 @@
-import { type NextRequest } from 'next/server';
-import { updateSession } from '@/lib/supabase/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
+/**
+ * No-op proxy. Auth is entirely client-side now (JWT in localStorage,
+ * Authorization: Bearer on each request to the Go backend). The previous
+ * Supabase session-refresh middleware has been removed.
+ */
+export async function proxy(_request: NextRequest) {
+  return NextResponse.next();
 }
 
 export const config = {

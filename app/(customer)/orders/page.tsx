@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useOrdersStore } from "@/lib/stores/orders.store";
 import { useRestaurantStore } from "@/lib/stores/restaurant.store";
+import { useAuthHydrated } from "@/lib/hooks/useAuthHydrated";
 import type { GoOrder, GoOrderStatus } from "@/lib/api/dto";
 
 const STATUS_STYLES: Record<GoOrderStatus, { bg: string; fg: string }> = {
@@ -19,8 +20,8 @@ const STATUS_STYLES: Record<GoOrderStatus, { bg: string; fg: string }> = {
 
 export default function CustomerOrdersPage() {
   const router = useRouter();
+  const hydrated = useAuthHydrated();
   const token = useAuthStore((s) => s.token);
-  const hydrate = useAuthStore((s) => s.hydrate);
   const orders = useOrdersStore((s) => s.orders);
   const loading = useOrdersStore((s) => s.loading);
   const error = useOrdersStore((s) => s.error);
@@ -29,17 +30,14 @@ export default function CustomerOrdersPage() {
   const fetchRestaurant = useRestaurantStore((s) => s.fetch);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
+    if (!hydrated) return;
     if (!token) {
       router.push("/customer-login?next=/orders");
       return;
     }
     void fetchMine();
     if (!restaurant) void fetchRestaurant();
-  }, [token, fetchMine, fetchRestaurant, restaurant, router]);
+  }, [hydrated, token, fetchMine, fetchRestaurant, restaurant, router]);
 
   const currency = restaurant?.currency ?? "USD";
 

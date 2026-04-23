@@ -6,12 +6,14 @@
 
 export type GoRestaurant = {
   id: string;
-  slug: string;
   name: string;
   description?: string;
   logo_url?: string;
   phone?: string;
-  address?: string;
+  formatted_address?: string;
+  latitude: number;
+  longitude: number;
+  timezone?: string;
   delivery_fee: number;
   min_order_amount: number;
   estimated_pickup_time: number;
@@ -127,7 +129,6 @@ export type GoCustomerProfile = {
 
 export type GoMembership = {
   restaurant_id: string;
-  restaurant_slug: string;
   restaurant_name: string;
   role: 'owner' | 'admin' | 'staff';
 };
@@ -142,7 +143,6 @@ export type GoAuthResponse = {
 
 export type GoFinalizeResult = {
   restaurant_id: string;
-  restaurant_slug: string;
   token: string;
   role: string;
 };

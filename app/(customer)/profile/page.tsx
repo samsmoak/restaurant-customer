@@ -4,21 +4,19 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useProfileStore } from "@/lib/stores/profile.store";
+import { useAuthHydrated } from "@/lib/hooks/useAuthHydrated";
 import ProfileForm from "./ProfileForm";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const hydrated = useAuthHydrated();
   const token = useAuthStore((s) => s.token);
-  const hydrate = useAuthStore((s) => s.hydrate);
   const profile = useProfileStore((s) => s.profile);
   const loading = useProfileStore((s) => s.loading);
   const fetchProfile = useProfileStore((s) => s.fetch);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
+    if (!hydrated) return;
     if (!token) {
       router.push("/customer-login?next=/profile");
       return;
@@ -26,7 +24,7 @@ export default function ProfilePage() {
     if (!profile && !loading) {
       void fetchProfile();
     }
-  }, [token, profile, loading, fetchProfile, router]);
+  }, [hydrated, token, profile, loading, fetchProfile, router]);
 
   if (!profile) {
     return (

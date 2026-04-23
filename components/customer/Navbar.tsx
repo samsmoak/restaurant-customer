@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/hooks/useCart';
+import { hydrateCart } from '@/lib/stores/cart.store';
 import { useAuthStore } from '@/lib/stores/auth.store';
 import { useProfileStore } from '@/lib/stores/profile.store';
 import CartSidebar from './CartSidebar';
@@ -43,11 +44,11 @@ export default function Navbar() {
   const signedIn = !!token;
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
+    // Sync both persisted stores from localStorage, then flip `mounted` so
+    // the UI can render the real (signed-in) state without an SSR mismatch.
     hydrate();
+    hydrateCart();
+    setMounted(true);
   }, [hydrate]);
 
   useEffect(() => {

@@ -3,11 +3,16 @@
 /**
  * Customer-side auth store, backed by the Go API.
  * Persists: token + user + profile + memberships.
+ *
+ * `skipHydration: true` + explicit `hydrate()` on first mount is the standard
+ * pattern for zustand persist in Next.js 16 / React 19 apps. Without it, SSR
+ * default state and client localStorage state disagree and you get the
+ * classic "profile icon doesn't show after login" flash.
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { setStoredToken, getStoredToken, isApiError } from '@/lib/api/client';
+import { setStoredToken, isApiError } from '@/lib/api/client';
 import { authApi } from '@/lib/api/endpoints';
 import type { GoAuthResponse, GoCustomerProfile, GoMembership, GoUser } from '@/lib/api/dto';
 
@@ -19,6 +24,7 @@ type AuthState = {
   isAdmin: boolean;
   loading: boolean;
   error: string | null;
+  _hydrated: boolean;
 
   signup: (input: { full_name: string; email: string; phone: string; password: string }) => Promise<void>;
   login: (input: { email: string; password: string }) => Promise<void>;
@@ -51,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
       isAdmin: false,
       loading: false,
       error: null,
+      _hydrated: false,
 
       async signup(input) {
         set({ loading: true, error: null });
@@ -89,15 +96,17 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.signout();
         } catch {
-          // ignore — the server-side signout is a no-op anyway.
+          /* ignore */
         }
         setStoredToken(null);
         set({ token: null, user: null, profile: null, memberships: [], isAdmin: false });
       },
 
       hydrate() {
-        const tok = getStoredToken();
-        if (tok) set({ token: tok });
+        // Trigger zustand-persist rehydration + mark as done.
+        void useAuthStore.persist.rehydrate()?.then(() => {
+          useAuthStore.setState({ _hydrated: true });
+        });
       },
 
       setProfile(p) {
@@ -107,6 +116,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'rs-customer-auth',
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? window.localStorage : undefined) as Storage),
+      skipHydration: true,
       partialize: (s) => ({
         token: s.token,
         user: s.user,

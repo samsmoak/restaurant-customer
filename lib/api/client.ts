@@ -33,12 +33,17 @@ export function apiBaseUrl(): string {
   return url.replace(/\/+$/, '');
 }
 
-function tenantSlug(): string {
-  const s = process.env.NEXT_PUBLIC_RESTAURANT_SLUG;
-  if (!s || s.trim() === '') {
-    throw new Error('NEXT_PUBLIC_RESTAURANT_SLUG is not set');
+/**
+ * This customer deployment is pinned to exactly one restaurant via the
+ * NEXT_PUBLIC_RESTAURANT_ID env var (the restaurant's ObjectID hex).
+ * Throws loudly if unset — misconfiguration should fail fast, not 404 later.
+ */
+function tenantId(): string {
+  const id = process.env.NEXT_PUBLIC_RESTAURANT_ID;
+  if (!id || id.trim() === '') {
+    throw new Error('NEXT_PUBLIC_RESTAURANT_ID is not set');
   }
-  return s.trim();
+  return id.trim();
 }
 
 type RequestOptions = RequestInit & {
@@ -83,7 +88,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
 
 /** Build `/api/r/:slug/...` path for the configured tenant. */
 export function tenantPath(suffix: string): string {
-  return `/api/r/${encodeURIComponent(tenantSlug())}${suffix.startsWith('/') ? '' : '/'}${suffix}`;
+  return `/api/r/${encodeURIComponent(tenantId())}${suffix.startsWith('/') ? '' : '/'}${suffix}`;
 }
 
 export const api = {

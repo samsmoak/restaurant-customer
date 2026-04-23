@@ -39,7 +39,7 @@ export function useRestaurantStatus() {
         estimated_delivery_time: restaurant.estimated_delivery_time,
         currency: restaurant.currency,
         opening_hours: restaurant.opening_hours as unknown as RestaurantSettings['opening_hours'],
-        address: restaurant.address ?? null,
+        address: restaurant.formatted_address ?? null,
         manual_closed: restaurant.manual_closed,
         created_at: '',
       }

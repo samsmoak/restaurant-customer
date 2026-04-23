@@ -53,6 +53,12 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'restaurant-cart',
+      skipHydration: true,
     }
   )
 );
+
+// Call once on the client to sync from localStorage.
+export function hydrateCart() {
+  void useCartStore.persist.rehydrate();
+}
