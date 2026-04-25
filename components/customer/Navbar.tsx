@@ -10,6 +10,7 @@ import {
   LogOut,
   ChevronDown,
   ClipboardList,
+  Home,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
@@ -23,15 +24,9 @@ import { useRestaurantStore } from '@/lib/stores/restaurant.store';
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  // Only the homepage has a dark hero — on all other pages, always show the
-  // frosted light navbar so text is legible against the white page background.
   const hasHero = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  // `mounted` flag: persisted zustand stores (cart, auth) differ between
-  // SSR and the first client paint because localStorage is only available
-  // after mount. Gate any value that reads from those stores so SSR markup
-  // matches the initial client render.
   const [mounted, setMounted] = useState(false);
 
   const rawItemCount = useCart((s) => s.getItemCount());
@@ -49,8 +44,6 @@ export default function Navbar() {
   const signedIn = !!token;
 
   useEffect(() => {
-    // Sync both persisted stores from localStorage, then flip `mounted` so
-    // the UI can render the real (signed-in) state without an SSR mismatch.
     hydrate();
     hydrateCart();
     setMounted(true);
@@ -61,7 +54,6 @@ export default function Navbar() {
   }, [signedIn, profile, fetchProfile]);
 
   useEffect(() => {
-    // Check initial scroll position (e.g. user refreshed while scrolled down)
     setScrolled(window.scrollY > 50);
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -77,13 +69,8 @@ export default function Navbar() {
   const email = profile?.email ?? user?.email ?? null;
   const fullName = profile?.full_name ?? user?.full_name ?? null;
 
-  // showDark: true when the navbar has a light frosted background (needs dark text)
-  // false when floating over the dark hero (needs white text)
-  const showDark   = !hasHero || scrolled;
-  const textColor  = showDark ? '#1A1A1A' : '#FFFFFF';
-  const textMuted  = showDark ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.7)';
-  const iconAccent = showDark ? '#C9A96E' : '#EDD07A';
-  const colorTransition = 'color 0.3s ease';
+  // Show background once we leave the hero top (or on any non-hero page)
+  const showBg = !hasHero || scrolled;
 
   return (
     <>
@@ -91,14 +78,17 @@ export default function Navbar() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-50"
         style={{
-          backgroundColor: showDark ? 'rgba(255, 255, 255, 0.92)' : 'transparent',
-          backdropFilter: showDark ? 'blur(20px)' : 'none',
-          borderBottom: showDark ? '1px solid rgba(26, 26, 26, 0.07)' : 'none',
+          backgroundColor: showBg ? 'rgba(10,8,5,0.94)' : 'transparent',
+          backdropFilter: showBg ? 'blur(20px)' : 'none',
+          WebkitBackdropFilter: showBg ? 'blur(20px)' : 'none',
+          borderBottom: showBg ? '1px solid rgba(201,169,110,0.1)' : 'none',
+          transition: 'background-color 0.35s ease, border-color 0.35s ease, backdrop-filter 0.35s ease',
         }}
       >
         <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-between">
+
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             {restaurant?.logo_url ? (
@@ -115,8 +105,8 @@ export default function Navbar() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-transform group-hover:scale-105 shrink-0"
                 style={{
                   background: 'linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)',
-                  color: '#FFFFFF',
-                  boxShadow: '0 3px 12px rgba(201,169,110,0.35)',
+                  color: '#FFF8EE',
+                  boxShadow: '0 3px 12px rgba(154,110,48,0.4)',
                 }}
               >
                 {restaurant ? restaurant.name.slice(0, 2).toUpperCase() : '…'}
@@ -124,7 +114,7 @@ export default function Navbar() {
             )}
             <span
               className="text-base font-semibold hidden sm:block"
-              style={{ color: textColor, fontFamily: 'var(--font-playfair)', transition: colorTransition }}
+              style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)' }}
             >
               {restaurant?.name ?? ''}
             </span>
@@ -132,50 +122,47 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-7">
-            <Link
-              href="/menu"
-              className="text-sm font-medium hover:opacity-100"
-              style={{ color: textMuted, transition: colorTransition }}
-            >
-              Menu
-            </Link>
-            <Link
-              href="/track"
-              className="text-sm font-medium hover:opacity-100"
-              style={{ color: textMuted, transition: colorTransition }}
-            >
-              Track Order
-            </Link>
-            {!signedIn && (
-              <Link
-                href="/join"
-                className="text-sm font-medium hover:opacity-100"
-                style={{ color: textMuted, transition: colorTransition }}
-              >
-                Sign Up
-              </Link>
-            )}
+            {[
+              { label: 'Menu', href: '/menu' },
+              { label: 'Track Order', href: '/track' },
+              ...(!signedIn ? [{ label: 'Sign Up', href: '/join' }] : []),
+            ].map(({ label, href }) => {
+              const active = pathname === href || pathname.startsWith(href + '/');
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="text-sm font-medium transition-all hover:opacity-100"
+                  style={{
+                    color: active ? '#C9A96E' : 'rgba(255,255,255,0.6)',
+                    fontFamily: 'var(--font-space-grotesk)',
+                    borderBottom: active ? '1px solid rgba(201,169,110,0.5)' : '1px solid transparent',
+                    paddingBottom: '2px',
+                  }}
+                >
+                  {label}
+                </Link>
+              );
+            })}
 
             {signedIn && (
               <ProfileDropdown
                 fullName={fullName}
                 email={email}
                 onSignOut={handleSignOut}
-                showDark={showDark}
-                iconAccent={iconAccent}
               />
             )}
 
             {/* Cart */}
             <Link
               href="/cart"
-              className="relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
+              className="relative flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-all hover:scale-105"
               style={{
                 background: 'linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)',
                 color: '#FFF8EE',
-                boxShadow: scrolled
-                  ? '0 4px 14px rgba(154,110,48,0.28)'
-                  : '0 4px 14px rgba(0,0,0,0.35)',
+                borderRadius: 4,
+                boxShadow: '0 4px 14px rgba(154,110,48,0.35)',
+                fontFamily: 'var(--font-space-grotesk)',
               }}
             >
               <ShoppingBag size={15} />
@@ -186,7 +173,7 @@ export default function Navbar() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-                  style={{ backgroundColor: '#0A0805', color: '#EDD07A' }}
+                  style={{ backgroundColor: '#0A0805', color: '#EDD07A', border: '1px solid rgba(237,208,122,0.3)' }}
                 >
                   {itemCount}
                 </motion.span>
@@ -196,18 +183,18 @@ export default function Navbar() {
 
           {/* Mobile right side */}
           <div className="flex items-center gap-3.5 md:hidden">
-            <Link href="/cart" className="relative" style={{ color: iconAccent, transition: colorTransition }}>
+            <Link href="/cart" className="relative" style={{ color: '#C9A96E' }}>
               <ShoppingBag size={20} />
               {itemCount > 0 && (
                 <span
                   className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-                  style={{ backgroundColor: '#0A0805', color: '#EDD07A' }}
+                  style={{ backgroundColor: '#0A0805', color: '#EDD07A', border: '1px solid rgba(237,208,122,0.3)' }}
                 >
                   {itemCount}
                 </span>
               )}
             </Link>
-            <button onClick={() => setMobileOpen(true)} style={{ color: textColor, transition: colorTransition }}>
+            <button onClick={() => setMobileOpen(true)} style={{ color: 'rgba(255,255,255,0.8)' }}>
               <Menu size={22} />
             </button>
           </div>
@@ -237,14 +224,10 @@ function ProfileDropdown({
   fullName,
   email,
   onSignOut,
-  showDark,
-  iconAccent,
 }: {
   fullName: string | null;
   email: string | null;
   onSignOut: () => void;
-  showDark: boolean;
-  iconAccent: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -252,53 +235,38 @@ function ProfileDropdown({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const displayName =
-    fullName?.split(' ')[0] ||
-    email?.split('@')[0] ||
-    'Account';
-
+  const displayName = fullName?.split(' ')[0] || email?.split('@')[0] || 'Account';
   const initials = fullName
-    ? fullName
-        .split(' ')
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+    ? fullName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()
     : (email?.[0] ?? 'U').toUpperCase();
-
-  const triggerBg      = showDark ? 'rgba(26,26,26,0.06)' : 'rgba(255,255,255,0.14)';
-  const triggerText    = showDark ? '#1A1A1A' : '#FFFFFF';
-  const triggerChevron = showDark ? '#6B7280' : 'rgba(255,255,255,0.7)';
-  const colorTransition = 'color 0.3s ease, background-color 0.3s ease';
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full px-2 py-1 hover:scale-105"
-        style={{ backgroundColor: triggerBg, transition: colorTransition }}
+        className="flex items-center gap-2 px-2 py-1 transition-all hover:scale-105"
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(201,169,110,0.2)',
+          borderRadius: 6,
+        }}
       >
-        <Avatar initials={initials} size={28} />
-        <span
-          className="text-sm font-medium max-w-22.5 truncate"
-          style={{ color: triggerText, transition: colorTransition }}
-        >
+        <Avatar initials={initials} size={26} />
+        <span className="text-sm font-medium max-w-22.5 truncate" style={{ color: '#FFFFFF' }}>
           {displayName}
         </span>
         <ChevronDown
           size={13}
           style={{
-            color: triggerChevron,
+            color: 'rgba(255,255,255,0.5)',
             transform: open ? 'rotate(180deg)' : 'none',
-            transition: 'transform 0.2s ease, color 0.3s ease',
+            transition: 'transform 0.2s ease',
           }}
         />
       </button>
@@ -310,25 +278,27 @@ function ProfileDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-52 rounded-xl shadow-xl overflow-hidden"
+            className="absolute right-0 mt-2 w-52 overflow-hidden"
             style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid rgba(26,26,26,0.09)',
+              backgroundColor: '#1A1208',
+              border: '1px solid rgba(201,169,110,0.18)',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
               zIndex: 100,
+              borderRadius: 6,
             }}
           >
             <div
               className="px-4 py-3 flex items-center gap-2.5"
-              style={{ borderBottom: '1px solid rgba(26,26,26,0.07)' }}
+              style={{ borderBottom: '1px solid rgba(201,169,110,0.1)' }}
             >
               <Avatar initials={initials} size={32} />
               <div className="min-w-0">
                 {fullName && (
-                  <p className="text-sm font-semibold truncate" style={{ color: '#1A1A1A' }}>
+                  <p className="text-sm font-semibold truncate" style={{ color: '#FFFFFF', fontFamily: 'var(--font-space-grotesk)' }}>
                     {fullName}
                   </p>
                 )}
-                <p className="text-xs truncate" style={{ color: '#6B7280' }}>
+                <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {email}
                 </p>
               </div>
@@ -337,27 +307,27 @@ function ProfileDropdown({
             <div className="py-1">
               <button
                 onClick={() => { setOpen(false); router.push('/orders'); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-stone-50"
-                style={{ color: '#1A1A1A' }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
+                style={{ color: 'rgba(255,255,255,0.8)' }}
               >
-                <ClipboardList size={14} style={{ color: iconAccent }} />
+                <ClipboardList size={14} style={{ color: '#C9A96E' }} />
                 My Orders
               </button>
               <button
                 onClick={() => { setOpen(false); router.push('/profile'); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-stone-50"
-                style={{ color: '#1A1A1A' }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
+                style={{ color: 'rgba(255,255,255,0.8)' }}
               >
-                <User size={14} style={{ color: iconAccent }} />
+                <User size={14} style={{ color: '#C9A96E' }} />
                 My Profile
               </button>
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(26,26,26,0.07)' }} className="py-1">
+            <div style={{ borderTop: '1px solid rgba(201,169,110,0.1)' }} className="py-1">
               <button
                 onClick={() => { setOpen(false); onSignOut(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50"
-                style={{ color: '#DC2626' }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-950/40"
+                style={{ color: '#F87171' }}
               >
                 <LogOut size={14} />
                 Sign out
@@ -407,15 +377,18 @@ function MobileMenu({
   onSignOut: () => void;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const initials = fullName
-    ? fullName
-        .split(' ')
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+    ? fullName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()
     : (email?.[0] ?? 'U').toUpperCase();
+
+  const NAV_LINKS = [
+    { label: 'Home', href: '/' },
+    { label: 'Menu', href: '/menu' },
+    { label: 'Track Order', href: '/track' },
+    ...(!signedIn ? [{ label: 'Sign Up', href: '/join' }] : []),
+  ];
 
   return (
     <motion.div
@@ -426,61 +399,91 @@ function MobileMenu({
       className="fixed inset-0 z-60 md:hidden flex flex-col"
       style={{ backgroundColor: '#0A0805' }}
     >
-      <div className="flex items-center justify-between px-6 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <span className="text-sm font-semibold tracking-[0.15em] uppercase" style={{ color: '#C9A96E', fontFamily: 'var(--font-playfair)' }}>
-          Menu
-        </span>
-        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.6)' }}>
+      {/* Header row */}
+      <div
+        className="flex items-center justify-between px-6 py-3.5"
+        style={{ borderBottom: '1px solid rgba(201,169,110,0.1)' }}
+      >
+        <div className="flex items-center gap-2">
+          <Home size={13} style={{ color: '#C9A96E' }} />
+          <span
+            className="text-xs font-semibold tracking-[0.18em] uppercase"
+            style={{ color: '#C9A96E', fontFamily: 'var(--font-space-grotesk)' }}
+          >
+            Navigation
+          </span>
+        </div>
+        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)' }}>
           <X size={22} />
         </button>
       </div>
 
+      {/* User card */}
       {signedIn && (
-        <div className="flex items-center gap-3 mx-6 mt-5 mb-2 p-4 rounded-xl" style={{ backgroundColor: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.18)' }}>
+        <div
+          className="flex items-center gap-3 mx-6 mt-5 mb-2 p-4"
+          style={{
+            backgroundColor: 'rgba(201,169,110,0.07)',
+            border: '1px solid rgba(201,169,110,0.15)',
+            borderRadius: 6,
+          }}
+        >
           <Avatar initials={initials} size={40} />
           <div className="min-w-0">
             {fullName && (
-              <p className="font-semibold text-sm truncate" style={{ color: '#FFFFFF' }}>
+              <p className="font-semibold text-sm truncate" style={{ color: '#FFFFFF', fontFamily: 'var(--font-space-grotesk)' }}>
                 {fullName}
               </p>
             )}
-            <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
               {email}
             </p>
           </div>
         </div>
       )}
 
-      <nav className="flex-1 flex flex-col px-6 pt-6 gap-1">
-        {[
-          { label: 'Menu', href: '/menu' },
-          { label: 'Track Order', href: '/track' },
-          ...(!signedIn ? [{ label: 'Sign Up', href: '/join' }] : []),
-        ].map(({ label, href }) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={onClose}
-            className="py-3.5 text-xl font-semibold transition-colors hover:opacity-80"
-            style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-          >
-            {label}
-          </Link>
-        ))}
+      {/* Nav links */}
+      <nav className="flex-1 flex flex-col px-6 pt-6 gap-0">
+        {NAV_LINKS.map(({ label, href }) => {
+          const active = pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={onClose}
+              className="py-4 text-xl font-semibold transition-opacity hover:opacity-80"
+              style={{
+                color: active ? '#C9A96E' : '#FFFFFF',
+                fontFamily: 'var(--font-playfair)',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+              }}
+            >
+              {label}
+            </Link>
+          );
+        })}
 
         {signedIn && (
           <>
             <button
               onClick={() => { onClose(); router.push('/orders'); }}
-              className="py-3.5 text-xl font-semibold text-left transition-colors hover:opacity-80"
-              style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+              className="py-4 text-xl font-semibold text-left transition-opacity hover:opacity-70"
+              style={{
+                color: '#FFFFFF',
+                fontFamily: 'var(--font-playfair)',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+              }}
             >
               My Orders
             </button>
             <button
               onClick={() => { onClose(); router.push('/profile'); }}
-              className="py-3.5 text-xl font-semibold text-left transition-colors hover:opacity-80"
-              style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+              className="py-4 text-xl font-semibold text-left transition-opacity hover:opacity-70"
+              style={{
+                color: '#FFFFFF',
+                fontFamily: 'var(--font-playfair)',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+              }}
             >
               My Profile
             </button>
@@ -490,22 +493,27 @@ function MobileMenu({
         <Link
           href="/cart"
           onClick={onClose}
-          className="py-3.5 text-xl font-semibold flex items-center gap-2 transition-colors hover:opacity-80"
-          style={{ color: '#C9A96E', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+          className="py-4 text-xl font-semibold flex items-center gap-2.5 transition-opacity hover:opacity-70"
+          style={{
+            color: '#C9A96E',
+            fontFamily: 'var(--font-playfair)',
+            borderBottom: '1px solid rgba(255,255,255,0.05)',
+          }}
         >
           <ShoppingBag size={18} />
           Cart {itemCount > 0 && `(${itemCount})`}
         </Link>
       </nav>
 
+      {/* Sign out */}
       {signedIn && (
         <div className="px-6 pb-8">
           <button
             onClick={() => { onClose(); onSignOut(); }}
-            className="flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-70"
-            style={{ color: '#DC2626' }}
+            className="flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70"
+            style={{ color: '#F87171', fontFamily: 'var(--font-space-grotesk)' }}
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
             Sign out
           </button>
         </div>
