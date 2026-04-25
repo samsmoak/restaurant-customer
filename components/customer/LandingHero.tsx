@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, type TargetAndTransition } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ArrowRight } from "lucide-react";
 import RestaurantStatusLive from "./RestaurantStatusLive";
 
 // ── Slides ────────────────────────────────────────────────────────────────────
@@ -210,36 +210,40 @@ export default function LandingHero() {
       */}
 
       {/* Mobile text block — sits in natural flow, top of screen */}
-      <div className="lg:hidden absolute top-0 left-0 right-0 z-20 flex flex-col justify-end pb-4"
-           style={{ height: "46%" }}>
-        <div className="px-6 sm:px-10 space-y-4">
-          {/* Badge */}
+      <div className="lg:hidden absolute top-0 left-0 right-0 z-20 flex flex-col justify-center"
+           style={{ height: "46%", paddingTop: "52px" }}>
+        <div className="px-6 sm:px-10 flex flex-col items-center text-center gap-4">
+
+          {/* Badge — editorial line style */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="flex items-center gap-3"
           >
+            <span className="h-px w-6" style={{ backgroundColor: "rgba(201,169,110,0.45)" }} />
             <span
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs tracking-[0.22em] uppercase"
-              style={{
-                border: "1px solid rgba(201,169,110,0.4)",
-                color: "#C9A96E",
-                fontFamily: "var(--font-space-grotesk)",
-                backgroundColor: "rgba(201,169,110,0.06)",
-              }}
+              className="text-[10px] tracking-[0.32em] uppercase"
+              style={{ color: "#C9A96E", fontFamily: "var(--font-space-grotesk)" }}
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#C9A96E" }} />
               Ember &amp; Forge &mdash; Est.&nbsp;2020
             </span>
+            <span className="h-px w-6" style={{ backgroundColor: "rgba(201,169,110,0.45)" }} />
           </motion.div>
 
           {/* Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="font-bold text-white leading-[0.88]"
-            style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(2.6rem, 10vw, 3.8rem)" }}
+            transition={{ duration: 1.0, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="text-white"
+            style={{
+              fontFamily: "var(--font-cormorant)",
+              fontSize: "clamp(2.8rem, 11vw, 4.2rem)",
+              fontWeight: 400,
+              lineHeight: 1.0,
+              letterSpacing: "-0.01em",
+            }}
           >
             Made to make
             <br />
@@ -247,6 +251,7 @@ export default function LandingHero() {
               backgroundImage: "linear-gradient(105deg, #EDD07A 0%, #C9A96E 45%, #9A6E30 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text", display: "inline-block",
+              fontStyle: "italic",
             }}>
               you smile.
             </em>
@@ -256,31 +261,65 @@ export default function LandingHero() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.55 }}
-            className="text-sm leading-relaxed max-w-xs"
-            style={{ color: "rgba(255,255,255,0.48)", fontFamily: "var(--font-space-grotesk)" }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+            className="max-w-88"
+            style={{
+              color: "rgba(255,255,255,0.62)",
+              fontFamily: "var(--font-cormorant)",
+              fontSize: "1.05rem",
+              fontStyle: "italic",
+              lineHeight: 1.55,
+            }}
           >
-            Bright flavors. Fresh from the fire. Delivered warm — or ready when you walk in.
+            Bright flavors. Fresh from the fire.
+            Delivered warm — or ready when you walk in.
           </motion.p>
 
-          {/* CTA + Status row */}
+          {/* Buttons */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.75 }}
-            className="flex items-center gap-4 flex-wrap"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.7 }}
+            className="flex items-center gap-5 flex-wrap justify-center"
           >
             <a
               href="/menu"
-              className="font-semibold text-sm tracking-[0.07em]"
+              className="text-sm font-medium transition-opacity hover:opacity-100"
+              style={{
+                color: "rgba(255,255,255,0.6)",
+                fontFamily: "var(--font-space-grotesk)",
+                letterSpacing: "0.08em",
+                borderBottom: "1px solid rgba(255,255,255,0.25)",
+                paddingBottom: "1px",
+              }}
+            >
+              View Menu
+            </a>
+            <a
+              href="/menu"
+              className="inline-flex items-center gap-2 font-semibold transition-all hover:scale-[1.03] active:scale-100"
               style={{
                 background: "linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)",
                 color: "#FFF8EE",
-                padding: "0.75rem 1.75rem",
+                padding: "0.8rem 1.75rem",
+                fontSize: "0.78rem",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontFamily: "var(--font-space-grotesk)",
+                boxShadow: "0 8px 24px rgba(154,110,48,0.4)",
+                borderRadius: "999px",
               }}
             >
-              Order Now
+              Order Now <ArrowRight size={13} />
             </a>
+          </motion.div>
+
+          {/* Status */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 1.0 }}
+          >
             <RestaurantStatusLive size="sm" />
           </motion.div>
         </div>
@@ -404,38 +443,38 @@ export default function LandingHero() {
       {/* ── Desktop text panel (hidden on mobile) ────────────────────── */}
       <div
         className="hidden lg:flex absolute top-0 bottom-0 z-20 flex-col justify-center"
-        style={{
-          left: "clamp(1.5rem, 7vw, 6.5rem)",
-          right: "62%",
-        }}
+        style={{ left: "clamp(1.5rem, 7vw, 6rem)", right: "62%" }}
       >
+        {/* Badge — editorial line style */}
         <motion.div
-          initial={{ opacity: 0, y: -12 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.1 }}
-          className="mb-8"
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="flex items-center gap-3 mb-7"
         >
+          <span className="h-px w-8 shrink-0" style={{ backgroundColor: "rgba(201,169,110,0.45)" }} />
           <span
-            className="inline-flex items-center gap-2.5 px-4 py-2 text-xs tracking-[0.28em] uppercase whitespace-nowrap"
-            style={{
-              border: "1px solid rgba(201,169,110,0.45)",
-              color: "#C9A96E",
-              fontFamily: "var(--font-space-grotesk)",
-              backdropFilter: "blur(6px)",
-              backgroundColor: "rgba(201,169,110,0.06)",
-            }}
+            className="text-[10px] tracking-[0.32em] uppercase whitespace-nowrap"
+            style={{ color: "#C9A96E", fontFamily: "var(--font-space-grotesk)" }}
           >
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: "#C9A96E" }} />
             Ember &amp; Forge &mdash; Est.&nbsp;2020
           </span>
+          <span className="h-px w-8 shrink-0" style={{ backgroundColor: "rgba(201,169,110,0.45)" }} />
         </motion.div>
 
+        {/* Headline */}
         <motion.h1
-          initial={{ opacity: 0, y: 56 }}
+          initial={{ opacity: 0, y: 48 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.05, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="font-bold text-white leading-[0.9]"
-          style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(3rem, 5.5vw, 6rem)" }}
+          transition={{ duration: 1.05, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="text-white"
+          style={{
+            fontFamily: "var(--font-cormorant)",
+            fontSize: "clamp(3.4rem, 5.8vw, 7rem)",
+            fontWeight: 400,
+            lineHeight: 0.95,
+            letterSpacing: "-0.01em",
+          }}
         >
           Made to make
           <br />
@@ -443,47 +482,77 @@ export default function LandingHero() {
             backgroundImage: "linear-gradient(105deg, #EDD07A 0%, #C9A96E 45%, #9A6E30 100%)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text", display: "inline-block",
+            fontStyle: "italic",
           }}>
             you smile.
           </em>
         </motion.h1>
 
+        {/* Tagline */}
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75, delay: 0.72 }}
-          className="mt-6 text-sm leading-relaxed max-w-xs"
-          style={{ color: "rgba(255,255,255,0.48)", fontFamily: "var(--font-space-grotesk)" }}
+          transition={{ duration: 0.75, delay: 0.65 }}
+          className="mt-6"
+          style={{
+            color: "rgba(255,255,255,0.62)",
+            fontFamily: "var(--font-cormorant)",
+            fontSize: "clamp(1rem, 1.4vw, 1.2rem)",
+            fontStyle: "italic",
+            lineHeight: 1.6,
+            maxWidth: "26ch",
+          }}
         >
           Bright flavors. Fresh from the fire.
           <br />
-          Delivered warm &mdash; or ready when you walk in.
+          Delivered warm — or ready when you walk in.
         </motion.p>
 
+        {/* Buttons */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75, delay: 0.95 }}
-          className="mt-9"
+          transition={{ duration: 0.75, delay: 0.88 }}
+          className="mt-9 flex items-center gap-6 flex-wrap"
         >
           <a
             href="/menu"
-            className="inline-block font-semibold text-sm tracking-[0.07em] transition-all hover:scale-[1.03] active:scale-100"
+            className="text-sm font-medium transition-opacity hover:opacity-100"
+            style={{
+              color: "rgba(255,255,255,0.6)",
+              fontFamily: "var(--font-space-grotesk)",
+              letterSpacing: "0.08em",
+              borderBottom: "1px solid rgba(255,255,255,0.25)",
+              paddingBottom: "1px",
+            }}
+          >
+            View Menu
+          </a>
+          <a
+            href="/menu"
+            className="inline-flex items-center gap-2 font-semibold transition-all hover:scale-[1.03] active:scale-100"
             style={{
               background: "linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)",
               color: "#FFF8EE",
-              padding: "0.9rem 2.25rem",
+              padding: "0.875rem 2rem",
+              fontSize: "0.75rem",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              fontFamily: "var(--font-space-grotesk)",
+              boxShadow: "0 8px 28px rgba(154,110,48,0.4)",
+              borderRadius: "999px",
             }}
           >
-            Order Now
+            Order Now <ArrowRight size={13} />
           </a>
         </motion.div>
 
+        {/* Status */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.3, duration: 0.7 }}
-          className="mt-8"
+          transition={{ delay: 1.2, duration: 0.7 }}
+          className="mt-6"
         >
           <RestaurantStatusLive />
         </motion.div>
