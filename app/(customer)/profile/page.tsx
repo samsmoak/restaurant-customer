@@ -17,68 +17,55 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!token) {
-      router.push("/customer-login?next=/profile");
-      return;
-    }
-    if (!profile && !loading) {
-      void fetchProfile();
-    }
+    if (!token) { router.push("/customer-login?next=/profile"); return; }
+    if (!profile && !loading) void fetchProfile();
   }, [hydrated, token, profile, loading, fetchProfile, router]);
 
   if (!profile) {
     return (
-      <main className="min-h-screen pt-28 pb-24 px-6">
-        <div className="max-w-xl mx-auto text-center" style={{ color: "#4A4A4A" }}>
+      <main className="min-h-screen pt-28 pb-24 px-6" style={{ backgroundColor: "#F5F7FA" }}>
+        <p className="text-sm text-center" style={{ color: "#6B7280" }}>
           Loading your profile…
-        </div>
+        </p>
       </main>
     );
   }
 
   const initials = profile.full_name
-    ? profile.full_name
-        .split(" ")
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
+    ? profile.full_name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
     : (profile.email?.[0] ?? "U").toUpperCase();
 
   return (
-    <main className="min-h-screen pt-28 pb-24 px-6">
-      <div className="max-w-xl mx-auto">
-        <div className="flex items-center gap-5 mb-12">
+    <main className="min-h-screen pt-28 pb-24" style={{ backgroundColor: "#F5F7FA" }}>
+      <div className="px-6 max-w-3xl mx-auto">
+        <p
+          className="text-xs font-semibold uppercase tracking-[0.15em] mb-2"
+          style={{ color: "#4A4A4A" }}
+        >
+          Account
+        </p>
+
+        {/* Profile header */}
+        <div className="flex items-center gap-4 mb-8">
           <div
-            className="rounded-full flex items-center justify-center text-2xl font-bold shrink-0"
+            className="flex items-center justify-center text-base font-bold shrink-0"
             style={{
-              width: 72,
-              height: 72,
-              background: "linear-gradient(135deg, #FFB627 0%, #FF5A3C 100%)",
+              width: 52,
+              height: 52,
+              backgroundColor: "#0F2B4D",
               color: "#FFFFFF",
+              borderRadius: 8,
             }}
           >
             {initials}
           </div>
           <div>
-            <h1
-              className="text-2xl font-bold leading-tight"
-              style={{ color: "#1A1A1A", fontFamily: "var(--font-playfair)" }}
-            >
+            <h1 className="text-2xl font-bold" style={{ color: "#1E1E1E" }}>
               {profile.full_name || "Your profile"}
             </h1>
-            <p className="text-sm mt-0.5" style={{ color: "#9CA3AF" }}>
-              {profile.email}
-            </p>
+            <p className="text-sm" style={{ color: "#6B7280" }}>{profile.email}</p>
           </div>
         </div>
-
-        <p
-          className="text-xs tracking-[0.25em] uppercase font-semibold mb-8"
-          style={{ color: "#FF5A3C" }}
-        >
-          Account details
-        </p>
 
         <ProfileForm profile={profile} />
       </div>

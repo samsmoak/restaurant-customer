@@ -1,7 +1,8 @@
 "use client";
 
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Plus } from "lucide-react";
 import type { MenuItemWithRelations } from "@/types";
+import { useCart } from "@/lib/hooks/useCart";
 
 export default function MenuItemCard({
   item,
@@ -11,69 +12,91 @@ export default function MenuItemCard({
   onClick: () => void;
 }) {
   const unavailable = !item.is_available;
+  const cartItems = useCart((s) => s.items);
+  const count = cartItems
+    .filter((i) => i.menuItemId === item.id)
+    .reduce((sum, i) => sum + i.quantity, 0);
+
   return (
-    <button
-      type="button"
-      onClick={unavailable ? undefined : onClick}
-      disabled={unavailable}
-      className="text-left w-full rounded-2xl overflow-hidden transition-all group"
+    <div
+      className="flex flex-col overflow-hidden transition-shadow hover:shadow-sm"
       style={{
         backgroundColor: "#FFFFFF",
-        border: "1px solid #ECECEC",
+        border: "1px solid #E5E7EB",
+        borderRadius: 10,
         opacity: unavailable ? 0.55 : 1,
-        cursor: unavailable ? "not-allowed" : "pointer",
       }}
     >
+      {/* Image */}
       <div
-        className="aspect-4/3 overflow-hidden"
-        style={{ backgroundColor: "#FFF7EC" }}
+        className="overflow-hidden shrink-0"
+        style={{ backgroundColor: "#F5F7FA", aspectRatio: "4/3" }}
       >
         {item.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={item.image_url}
             alt={item.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon size={36} style={{ color: "#E5B875" }} />
+            <ImageIcon size={28} style={{ color: "#D1D5DB" }} />
           </div>
         )}
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3
-            className="font-semibold text-base leading-tight"
-            style={{ color: "#1A1A1A" }}
+      {/* Details */}
+      <div className="flex flex-col flex-1 p-3 gap-2">
+        <div className="flex-1 min-w-0">
+          <p
+            className="font-semibold text-sm leading-snug line-clamp-2"
+            style={{ color: "#1E1E1E" }}
           >
             {item.name}
-          </h3>
-          <span
-            className="font-bold text-sm tabular-nums shrink-0 mt-0.5"
-            style={{ color: "#FF5A3C" }}
-          >
-            ${Number(item.base_price).toFixed(2)}
-          </span>
+          </p>
+          {item.description && (
+            <p
+              className="text-xs mt-1 leading-relaxed line-clamp-2"
+              style={{ color: "#6B7280" }}
+            >
+              {item.description}
+            </p>
+          )}
         </div>
-        {item.description && (
-          <p
-            className="text-xs leading-relaxed line-clamp-2"
-            style={{ color: "#4A4A4A" }}
-          >
-            {item.description}
-          </p>
-        )}
-        {unavailable && (
-          <p
-            className="text-xs mt-2 font-semibold"
-            style={{ color: "#DC2626" }}
-          >
-            Currently unavailable
-          </p>
-        )}
+
+        <div className="flex items-center justify-between gap-2 mt-auto">
+          {unavailable ? (
+            <p className="text-xs font-semibold" style={{ color: "#DC2626" }}>
+              Unavailable
+            </p>
+          ) : (
+            <p className="text-sm font-bold" style={{ color: "#1E1E1E" }}>
+              ${Number(item.base_price).toFixed(2)}
+            </p>
+          )}
+
+          {!unavailable && (
+            <button
+              type="button"
+              onClick={onClick}
+              className="w-8 h-8 shrink-0 flex items-center justify-center font-bold transition-opacity hover:opacity-80"
+              style={{
+                backgroundColor: "#0F2B4D",
+                color: "#FFFFFF",
+                borderRadius: 6,
+              }}
+              aria-label={`Add ${item.name}`}
+            >
+              {count > 0 ? (
+                <span className="text-xs font-bold">{count}</span>
+              ) : (
+                <Plus size={14} />
+              )}
+            </button>
+          )}
+        </div>
       </div>
-    </button>
+    </div>
   );
 }

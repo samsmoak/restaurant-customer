@@ -25,31 +25,28 @@ export default function CheckoutPage() {
 
   if (!profile) {
     return (
-      <main className="min-h-screen pt-28 px-6 max-w-2xl mx-auto pb-16">
-        <p style={{ color: "#4A4A4A" }}>Loading checkout…</p>
+      <main className="min-h-screen pt-28 pb-24 px-6" style={{ backgroundColor: "#F5F7FA" }}>
+        <div className="max-w-5xl mx-auto">
+          <p className="text-sm" style={{ color: "#4A4A4A" }}>Loading checkout…</p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen pt-28 px-6 max-w-2xl mx-auto pb-16">
-      <p
-        className="text-sm tracking-[0.3em] uppercase mb-3 font-semibold"
-        style={{ color: "#FF5A3C" }}
-      >
-        Almost there
-      </p>
-      <h1
-        className="text-5xl font-bold mb-3"
-        style={{ fontFamily: "var(--font-playfair)", color: "#1A1A1A" }}
-      >
-        Checkout
-      </h1>
-      <p style={{ color: "#4A4A4A" }} className="text-lg mb-8">
-        Tell us where it&apos;s going, then pay.
-      </p>
-
-      <CheckoutForm profile={profile} />
+    <main className="min-h-screen pt-28 pb-24 px-6" style={{ backgroundColor: "#F5F7FA" }}>
+      <div className="max-w-5xl mx-auto">
+        <p
+          className="text-xs font-bold uppercase tracking-[0.2em] mb-1"
+          style={{ color: "#4A4A4A" }}
+        >
+          Almost there
+        </p>
+        <h1 className="text-3xl font-bold mb-6" style={{ color: "#1E1E1E" }}>
+          Checkout
+        </h1>
+        <CheckoutForm profile={profile} />
+      </div>
     </main>
   );
 }

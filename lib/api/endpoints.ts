@@ -7,7 +7,9 @@ import type {
   GoFinalizeResult,
   GoMembership,
   GoOrder,
+  GoPaymentMethod,
   GoRestaurant,
+  GoSavedAddress,
 } from './dto';
 
 export type CheckoutPayload = {
@@ -21,6 +23,8 @@ export type CheckoutPayload = {
   delivery_zip?: string;
   delivery_notes?: string;
   special_instructions?: string;
+  save_payment_method?: boolean;
+  payment_method_id?: string;
   items: {
     menu_item_id: string;
     quantity: number;
@@ -33,6 +37,12 @@ export type CheckoutPayload = {
 export const authApi = {
   signup: (input: { full_name: string; email: string; phone: string; password: string }) =>
     api.post<GoAuthResponse>('/api/auth/signup/customer', input, { anonymous: true }),
+  checkEmailAvailable: (email: string) =>
+    api.post<{ available: boolean; registered_as?: 'admin' | 'customer' }>(
+      '/api/auth/email-available',
+      { email },
+      { anonymous: true }
+    ),
   login: (input: { email: string; password: string }) =>
     api.post<GoAuthResponse>('/api/auth/login', input, { anonymous: true }),
   google: (id_token: string) =>
@@ -88,4 +98,19 @@ export const ordersApi = {
 export const checkoutApi = {
   createIntent: (body: CheckoutPayload) =>
     api.post<GoCheckoutIntent>(tenantPath('/checkout/create-intent'), body),
+};
+
+export const paymentMethodsApi = {
+  list: () =>
+    api.get<{ payment_methods: GoPaymentMethod[] }>('/api/me/payment-methods'),
+  delete: (id: string) =>
+    api.del<void>(`/api/me/payment-methods/${encodeURIComponent(id)}`),
+  setupIntent: () =>
+    api.post<{ client_secret: string }>('/api/me/payment-methods/setup-intent', {}),
+};
+
+export const addressesApi = {
+  list:   ()                                 => api.get<{ addresses: GoSavedAddress[] }>('/api/me/addresses'),
+  create: (body: Omit<GoSavedAddress, 'id'>) => api.post<GoSavedAddress>('/api/me/addresses', body),
+  delete: (id: string)                       => api.del<void>(`/api/me/addresses/${encodeURIComponent(id)}`),
 };

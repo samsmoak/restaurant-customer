@@ -12,18 +12,22 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { useCart } from '@/lib/hooks/useCart';
 import { hydrateCart } from '@/lib/stores/cart.store';
 import { useAuthStore } from '@/lib/stores/auth.store';
 import { useProfileStore } from '@/lib/stores/profile.store';
-import CartSidebar from './CartSidebar';
+import { useRestaurantStore } from '@/lib/stores/restaurant.store';
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  // Only the homepage has a dark hero — on all other pages, always show the
+  // frosted light navbar so text is legible against the white page background.
+  const hasHero = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
   // `mounted` flag: persisted zustand stores (cart, auth) differ between
   // SSR and the first client paint because localStorage is only available
   // after mount. Gate any value that reads from those stores so SSR markup
@@ -39,6 +43,7 @@ export default function Navbar() {
   const profile = useProfileStore((s) => s.profile);
   const fetchProfile = useProfileStore((s) => s.fetch);
   const signout = useAuthStore((s) => s.signout);
+  const restaurant = useRestaurantStore((s) => s.restaurant);
 
   const token = mounted ? rawToken : null;
   const signedIn = !!token;
@@ -56,8 +61,10 @@ export default function Navbar() {
   }, [signedIn, profile, fetchProfile]);
 
   useEffect(() => {
+    // Check initial scroll position (e.g. user refreshed while scrolled down)
+    setScrolled(window.scrollY > 50);
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -70,6 +77,14 @@ export default function Navbar() {
   const email = profile?.email ?? user?.email ?? null;
   const fullName = profile?.full_name ?? user?.full_name ?? null;
 
+  // showDark: true when the navbar has a light frosted background (needs dark text)
+  // false when floating over the dark hero (needs white text)
+  const showDark   = !hasHero || scrolled;
+  const textColor  = showDark ? '#1A1A1A' : '#FFFFFF';
+  const textMuted  = showDark ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.7)';
+  const iconAccent = showDark ? '#C9A96E' : '#EDD07A';
+  const colorTransition = 'color 0.3s ease';
+
   return (
     <>
       <motion.header
@@ -78,53 +93,64 @@ export default function Navbar() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{
-          backgroundColor: scrolled ? 'rgba(255, 255, 255, 0.88)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(18px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(26, 26, 26, 0.08)' : 'none',
+          backgroundColor: showDark ? 'rgba(255, 255, 255, 0.92)' : 'transparent',
+          backdropFilter: showDark ? 'blur(20px)' : 'none',
+          borderBottom: showDark ? '1px solid rgba(26, 26, 26, 0.07)' : 'none',
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-transform group-hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #FFB627 0%, #FF5A3C 100%)',
-                color: '#FFFFFF',
-                boxShadow: '0 4px 16px rgba(255, 90, 60, 0.32)',
-              }}
-            >
-              E&F
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            {restaurant?.logo_url ? (
+              <Image
+                src={restaurant.logo_url}
+                alt={restaurant.name}
+                width={32}
+                height={32}
+                className="rounded-lg object-cover transition-transform group-hover:scale-105"
+                style={{ boxShadow: '0 3px 12px rgba(201,169,110,0.35)' }}
+              />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-transform group-hover:scale-105 shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)',
+                  color: '#FFFFFF',
+                  boxShadow: '0 3px 12px rgba(201,169,110,0.35)',
+                }}
+              >
+                {restaurant ? restaurant.name.slice(0, 2).toUpperCase() : '…'}
+              </div>
+            )}
             <span
-              className="text-lg font-semibold hidden sm:block"
-              style={{ color: '#1A1A1A', fontFamily: 'var(--font-playfair)' }}
+              className="text-base font-semibold hidden sm:block"
+              style={{ color: textColor, fontFamily: 'var(--font-playfair)', transition: colorTransition }}
             >
-              Ember & Forge
+              {restaurant?.name ?? ''}
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-7">
             <Link
               href="/menu"
-              className="text-sm font-medium transition-opacity hover:opacity-100"
-              style={{ color: '#1A1A1A', opacity: 0.75 }}
+              className="text-sm font-medium hover:opacity-100"
+              style={{ color: textMuted, transition: colorTransition }}
             >
               Menu
             </Link>
             <Link
               href="/track"
-              className="text-sm font-medium transition-opacity hover:opacity-100"
-              style={{ color: '#1A1A1A', opacity: 0.75 }}
+              className="text-sm font-medium hover:opacity-100"
+              style={{ color: textMuted, transition: colorTransition }}
             >
               Track Order
             </Link>
             {!signedIn && (
               <Link
                 href="/join"
-                className="text-sm font-medium transition-opacity hover:opacity-100"
-                style={{ color: '#1A1A1A', opacity: 0.75 }}
+                className="text-sm font-medium hover:opacity-100"
+                style={{ color: textMuted, transition: colorTransition }}
               >
                 Sign Up
               </Link>
@@ -135,56 +161,54 @@ export default function Navbar() {
                 fullName={fullName}
                 email={email}
                 onSignOut={handleSignOut}
+                showDark={showDark}
+                iconAccent={iconAccent}
               />
             )}
 
             {/* Cart */}
-            <button
-              type="button"
-              onClick={() => setCartOpen(true)}
-              className="relative flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105"
+            <Link
+              href="/cart"
+              className="relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
               style={{
-                background: 'linear-gradient(135deg, #FFB627 0%, #FF5A3C 100%)',
-                color: '#FFFFFF',
-                boxShadow: '0 6px 18px rgba(255, 90, 60, 0.28)',
+                background: 'linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)',
+                color: '#FFF8EE',
+                boxShadow: scrolled
+                  ? '0 4px 14px rgba(154,110,48,0.28)'
+                  : '0 4px 14px rgba(0,0,0,0.35)',
               }}
             >
-              <ShoppingBag size={18} />
+              <ShoppingBag size={15} />
               <span>Cart</span>
               {itemCount > 0 && (
                 <motion.span
                   key={itemCount}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center"
-                  style={{ backgroundColor: '#1A1A1A', color: '#FFFFFF' }}
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
+                  style={{ backgroundColor: '#0A0805', color: '#EDD07A' }}
                 >
                   {itemCount}
                 </motion.span>
               )}
-            </button>
+            </Link>
           </nav>
 
           {/* Mobile right side */}
-          <div className="flex items-center gap-4 md:hidden">
-            <button
-              type="button"
-              onClick={() => setCartOpen(true)}
-              className="relative"
-              style={{ color: '#FF5A3C' }}
-            >
-              <ShoppingBag size={22} />
+          <div className="flex items-center gap-3.5 md:hidden">
+            <Link href="/cart" className="relative" style={{ color: iconAccent, transition: colorTransition }}>
+              <ShoppingBag size={20} />
               {itemCount > 0 && (
                 <span
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-                  style={{ backgroundColor: '#1A1A1A', color: '#FFFFFF' }}
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
+                  style={{ backgroundColor: '#0A0805', color: '#EDD07A' }}
                 >
                   {itemCount}
                 </span>
               )}
-            </button>
-            <button onClick={() => setMobileOpen(true)} style={{ color: '#1A1A1A' }}>
-              <Menu size={24} />
+            </Link>
+            <button onClick={() => setMobileOpen(true)} style={{ color: textColor, transition: colorTransition }}>
+              <Menu size={22} />
             </button>
           </div>
         </div>
@@ -199,16 +223,10 @@ export default function Navbar() {
             email={email}
             itemCount={itemCount}
             onClose={() => setMobileOpen(false)}
-            openCart={() => {
-              setMobileOpen(false);
-              setCartOpen(true);
-            }}
             onSignOut={handleSignOut}
           />
         )}
       </AnimatePresence>
-
-      <CartSidebar open={cartOpen} onOpenChange={setCartOpen} />
     </>
   );
 }
@@ -219,10 +237,14 @@ function ProfileDropdown({
   fullName,
   email,
   onSignOut,
+  showDark,
+  iconAccent,
 }: {
   fullName: string | null;
   email: string | null;
   onSignOut: () => void;
+  showDark: boolean;
+  iconAccent: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -252,26 +274,31 @@ function ProfileDropdown({
         .toUpperCase()
     : (email?.[0] ?? 'U').toUpperCase();
 
+  const triggerBg      = showDark ? 'rgba(26,26,26,0.06)' : 'rgba(255,255,255,0.14)';
+  const triggerText    = showDark ? '#1A1A1A' : '#FFFFFF';
+  const triggerChevron = showDark ? '#6B7280' : 'rgba(255,255,255,0.7)';
+  const colorTransition = 'color 0.3s ease, background-color 0.3s ease';
+
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full px-2 py-1 transition-all hover:scale-105"
-        style={{ backgroundColor: 'rgba(26,26,26,0.06)' }}
+        className="flex items-center gap-2 rounded-full px-2 py-1 hover:scale-105"
+        style={{ backgroundColor: triggerBg, transition: colorTransition }}
       >
-        <Avatar initials={initials} size={32} />
+        <Avatar initials={initials} size={28} />
         <span
           className="text-sm font-medium max-w-22.5 truncate"
-          style={{ color: '#1A1A1A' }}
+          style={{ color: triggerText, transition: colorTransition }}
         >
           {displayName}
         </span>
         <ChevronDown
-          size={14}
+          size={13}
           style={{
-            color: '#4A4A4A',
+            color: triggerChevron,
             transform: open ? 'rotate(180deg)' : 'none',
-            transition: 'transform 0.2s',
+            transition: 'transform 0.2s ease, color 0.3s ease',
           }}
         />
       </button>
@@ -283,65 +310,56 @@ function ProfileDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-56 rounded-2xl shadow-xl overflow-hidden"
+            className="absolute right-0 mt-2 w-52 rounded-xl shadow-xl overflow-hidden"
             style={{
               backgroundColor: '#FFFFFF',
-              border: '1.5px solid rgba(26,26,26,0.08)',
+              border: '1px solid rgba(26,26,26,0.09)',
               zIndex: 100,
             }}
           >
             <div
-              className="px-4 py-3 flex items-center gap-3"
-              style={{ borderBottom: '1px solid rgba(26,26,26,0.08)' }}
+              className="px-4 py-3 flex items-center gap-2.5"
+              style={{ borderBottom: '1px solid rgba(26,26,26,0.07)' }}
             >
-              <Avatar initials={initials} size={36} />
+              <Avatar initials={initials} size={32} />
               <div className="min-w-0">
                 {fullName && (
                   <p className="text-sm font-semibold truncate" style={{ color: '#1A1A1A' }}>
                     {fullName}
                   </p>
                 )}
-                <p className="text-xs truncate" style={{ color: '#4A4A4A' }}>
+                <p className="text-xs truncate" style={{ color: '#6B7280' }}>
                   {email}
                 </p>
               </div>
             </div>
 
-            <div className="py-1.5">
+            <div className="py-1">
               <button
-                onClick={() => {
-                  setOpen(false);
-                  router.push('/orders');
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50"
+                onClick={() => { setOpen(false); router.push('/orders'); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-stone-50"
                 style={{ color: '#1A1A1A' }}
               >
-                <ClipboardList size={15} style={{ color: '#FF5A3C' }} />
+                <ClipboardList size={14} style={{ color: iconAccent }} />
                 My Orders
               </button>
               <button
-                onClick={() => {
-                  setOpen(false);
-                  router.push('/profile');
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50"
+                onClick={() => { setOpen(false); router.push('/profile'); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-stone-50"
                 style={{ color: '#1A1A1A' }}
               >
-                <User size={15} style={{ color: '#FF5A3C' }} />
+                <User size={14} style={{ color: iconAccent }} />
                 My Profile
               </button>
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(26,26,26,0.08)' }} className="py-1.5">
+            <div style={{ borderTop: '1px solid rgba(26,26,26,0.07)' }} className="py-1">
               <button
-                onClick={() => {
-                  setOpen(false);
-                  onSignOut();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50"
+                onClick={() => { setOpen(false); onSignOut(); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50"
                 style={{ color: '#DC2626' }}
               >
-                <LogOut size={15} />
+                <LogOut size={14} />
                 Sign out
               </button>
             </div>
@@ -357,12 +375,13 @@ function ProfileDropdown({
 function Avatar({ initials, size }: { initials: string; size: number }) {
   return (
     <div
-      className="rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+      className="rounded-full flex items-center justify-center shrink-0 font-bold"
       style={{
         width: size,
         height: size,
-        background: 'linear-gradient(135deg, #FFB627 0%, #FF5A3C 100%)',
-        color: '#FFFFFF',
+        fontSize: size < 32 ? 10 : 12,
+        background: 'linear-gradient(135deg, #D4AA6A 0%, #9A6E30 100%)',
+        color: '#FFF8EE',
       }}
     >
       {initials}
@@ -378,7 +397,6 @@ function MobileMenu({
   email,
   itemCount,
   onClose,
-  openCart,
   onSignOut,
 }: {
   signedIn: boolean;
@@ -386,7 +404,6 @@ function MobileMenu({
   email: string | null;
   itemCount: number;
   onClose: () => void;
-  openCart: () => void;
   onSignOut: () => void;
 }) {
   const router = useRouter();
@@ -402,110 +419,97 @@ function MobileMenu({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-60 md:hidden"
-      style={{ backgroundColor: 'rgba(255, 255, 255, 0.98)' }}
+      initial={{ x: '100%' }}
+      animate={{ x: 0 }}
+      exit={{ x: '100%' }}
+      transition={{ duration: 0.28, ease: [0.76, 0, 0.24, 1] }}
+      className="fixed inset-0 z-60 md:hidden flex flex-col"
+      style={{ backgroundColor: '#0A0805' }}
     >
-      <div className="flex flex-col h-full p-6">
-        <div className="flex justify-end">
-          <button onClick={onClose} style={{ color: '#1A1A1A' }}>
-            <X size={28} />
-          </button>
+      <div className="flex items-center justify-between px-6 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <span className="text-sm font-semibold tracking-[0.15em] uppercase" style={{ color: '#C9A96E', fontFamily: 'var(--font-playfair)' }}>
+          Menu
+        </span>
+        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.6)' }}>
+          <X size={22} />
+        </button>
+      </div>
+
+      {signedIn && (
+        <div className="flex items-center gap-3 mx-6 mt-5 mb-2 p-4 rounded-xl" style={{ backgroundColor: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.18)' }}>
+          <Avatar initials={initials} size={40} />
+          <div className="min-w-0">
+            {fullName && (
+              <p className="font-semibold text-sm truncate" style={{ color: '#FFFFFF' }}>
+                {fullName}
+              </p>
+            )}
+            <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              {email}
+            </p>
+          </div>
         </div>
+      )}
+
+      <nav className="flex-1 flex flex-col px-6 pt-6 gap-1">
+        {[
+          { label: 'Menu', href: '/menu' },
+          { label: 'Track Order', href: '/track' },
+          ...(!signedIn ? [{ label: 'Sign Up', href: '/join' }] : []),
+        ].map(({ label, href }) => (
+          <Link
+            key={href}
+            href={href}
+            onClick={onClose}
+            className="py-3.5 text-xl font-semibold transition-colors hover:opacity-80"
+            style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+          >
+            {label}
+          </Link>
+        ))}
 
         {signedIn && (
-          <div
-            className="flex items-center gap-3 mt-4 mb-6 p-4 rounded-2xl"
-            style={{ backgroundColor: '#FFF7EC' }}
-          >
-            <Avatar initials={initials} size={44} />
-            <div className="min-w-0">
-              {fullName && (
-                <p className="font-semibold truncate" style={{ color: '#1A1A1A' }}>
-                  {fullName}
-                </p>
-              )}
-              <p className="text-sm truncate" style={{ color: '#4A4A4A' }}>
-                {email}
-              </p>
-            </div>
-          </div>
+          <>
+            <button
+              onClick={() => { onClose(); router.push('/orders'); }}
+              className="py-3.5 text-xl font-semibold text-left transition-colors hover:opacity-80"
+              style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            >
+              My Orders
+            </button>
+            <button
+              onClick={() => { onClose(); router.push('/profile'); }}
+              className="py-3.5 text-xl font-semibold text-left transition-colors hover:opacity-80"
+              style={{ color: '#FFFFFF', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            >
+              My Profile
+            </button>
+          </>
         )}
 
-        <nav className="flex-1 flex flex-col items-center justify-center gap-8">
-          <Link
-            href="/menu"
-            onClick={onClose}
-            className="text-2xl font-semibold"
-            style={{ color: '#1A1A1A', fontFamily: 'var(--font-playfair)' }}
-          >
-            Menu
-          </Link>
-          <Link
-            href="/track"
-            onClick={onClose}
-            className="text-2xl font-semibold"
-            style={{ color: '#1A1A1A', fontFamily: 'var(--font-playfair)' }}
-          >
-            Track Order
-          </Link>
-          {signedIn ? (
-            <>
-              <button
-                onClick={() => {
-                  onClose();
-                  router.push('/orders');
-                }}
-                className="text-2xl font-semibold"
-                style={{ color: '#1A1A1A', fontFamily: 'var(--font-playfair)' }}
-              >
-                My Orders
-              </button>
-              <button
-                onClick={() => {
-                  onClose();
-                  router.push('/profile');
-                }}
-                className="text-2xl font-semibold"
-                style={{ color: '#1A1A1A', fontFamily: 'var(--font-playfair)' }}
-              >
-                My Profile
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/join"
-              onClick={onClose}
-              className="text-2xl font-semibold"
-              style={{ color: '#1A1A1A', fontFamily: 'var(--font-playfair)' }}
-            >
-              Sign Up
-            </Link>
-          )}
+        <Link
+          href="/cart"
+          onClick={onClose}
+          className="py-3.5 text-xl font-semibold flex items-center gap-2 transition-colors hover:opacity-80"
+          style={{ color: '#C9A96E', fontFamily: 'var(--font-playfair)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <ShoppingBag size={18} />
+          Cart {itemCount > 0 && `(${itemCount})`}
+        </Link>
+      </nav>
+
+      {signedIn && (
+        <div className="px-6 pb-8">
           <button
-            type="button"
-            onClick={openCart}
-            className="text-2xl font-semibold"
-            style={{ color: '#FF5A3C', fontFamily: 'var(--font-playfair)' }}
+            onClick={() => { onClose(); onSignOut(); }}
+            className="flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-70"
+            style={{ color: '#DC2626' }}
           >
-            Cart ({itemCount})
+            <LogOut size={15} />
+            Sign out
           </button>
-          {signedIn && (
-            <button
-              onClick={() => {
-                onClose();
-                onSignOut();
-              }}
-              className="text-lg font-semibold"
-              style={{ color: '#DC2626' }}
-            >
-              Sign out
-            </button>
-          )}
-        </nav>
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 }

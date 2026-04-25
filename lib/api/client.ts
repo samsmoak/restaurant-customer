@@ -6,6 +6,8 @@
  * that need to call the backend should pass an explicit token.
  */
 
+import { RESTAURANT_ID } from '../config';
+
 export type ApiError = {
   status: number;
   error: string;
@@ -39,11 +41,10 @@ export function apiBaseUrl(): string {
  * Throws loudly if unset — misconfiguration should fail fast, not 404 later.
  */
 function tenantId(): string {
-  const id = process.env.NEXT_PUBLIC_RESTAURANT_ID;
-  if (!id || id.trim() === '') {
+  if (!RESTAURANT_ID) {
     throw new Error('NEXT_PUBLIC_RESTAURANT_ID is not set');
   }
-  return id.trim();
+  return RESTAURANT_ID;
 }
 
 type RequestOptions = RequestInit & {

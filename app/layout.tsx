@@ -14,9 +14,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Ember & Forge — Premium Dining Experience",
-  description:
-    "Fresh ingredients. Bold flavors. Order online for delivery or pickup.",
+  title: "Order Online",
+  description: "Order online for delivery or pickup.",
 };
 
 export default function RootLayout({

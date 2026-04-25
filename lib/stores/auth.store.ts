@@ -100,6 +100,10 @@ export const useAuthStore = create<AuthState>()(
         }
         setStoredToken(null);
         set({ token: null, user: null, profile: null, memberships: [], isAdmin: false });
+        // Lazy import avoids circular dep
+        import('@/lib/stores/addresses.store').then(({ useAddressStore }) => {
+          useAddressStore.getState().clear();
+        });
       },
 
       hydrate() {

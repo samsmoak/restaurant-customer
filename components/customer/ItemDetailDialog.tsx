@@ -3,13 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useCart } from "@/lib/hooks/useCart";
 import type { MenuItemWithRelations } from "@/types";
 
@@ -21,15 +15,18 @@ type Props = {
 
 export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
   const addItem = useCart((s) => s.addItem);
+  const cartItems = useCart((s) => s.items);
+  const updateQuantity = useCart((s) => s.updateQuantity);
+  const removeItem = useCart((s) => s.removeItem);
 
   const [quantity, setQuantity] = useState(1);
   const [sizeName, setSizeName] = useState<string | null>(null);
   const [extrasOn, setExtrasOn] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState("");
 
+  // Reset local state whenever the dialog opens for a new item.
   useEffect(() => {
     if (!item || !open) return;
-    setQuantity(1);
     setNotes("");
     setExtrasOn({});
     const defaultSize = item.sizes?.find((s) => s.is_default) ?? item.sizes?.[0];
@@ -49,6 +46,31 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
       .map((e) => ({ name: e.name, price: Number(e.price) || 0 }));
   }, [item, extrasOn]);
 
+  // Find an existing cart entry that matches the current size + extras selection.
+  const existingEntry = useMemo(() => {
+    if (!item) return null;
+    const extrasNames = [...selectedExtras]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((e) => e.name)
+      .join(",");
+    return (
+      cartItems.find(
+        (i) =>
+          i.menuItemId === item.id &&
+          (i.selectedSize?.name ?? "default") === (selectedSize?.name ?? "default") &&
+          [...i.selectedExtras]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((e) => e.name)
+            .join(",") === extrasNames
+      ) ?? null
+    );
+  }, [cartItems, item, selectedSize, selectedExtras]);
+
+  // Sync local quantity to the existing cart entry when selection changes.
+  useEffect(() => {
+    setQuantity(existingEntry ? existingEntry.quantity : 1);
+  }, [existingEntry]);
+
   const unitTotal = useMemo(() => {
     if (!item) return 0;
     const base = Number(item.base_price) || 0;
@@ -57,9 +79,9 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
     return base + sz + ex;
   }, [item, selectedSize, selectedExtras]);
 
-  const lineTotal = unitTotal * quantity;
-
   if (!item) return null;
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleAdd = () => {
     addItem({
@@ -76,14 +98,42 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
+  const handleDecrease = () => {
+    if (existingEntry) {
+      if (existingEntry.quantity <= 1) {
+        removeItem(existingEntry.cartId);
+        toast(`Removed ${item.name} from cart`);
+        onOpenChange(false);
+      } else {
+        updateQuantity(existingEntry.cartId, existingEntry.quantity - 1);
+      }
+    } else {
+      setQuantity((q) => Math.max(1, q - 1));
+    }
+  };
+
+  const handleIncrease = () => {
+    if (existingEntry) {
+      updateQuantity(existingEntry.cartId, existingEntry.quantity + 1);
+    } else {
+      setQuantity((q) => q + 1);
+    }
+  };
+
+  const displayQty = existingEntry ? existingEntry.quantity : quantity;
+  const lineTotal = unitTotal * displayQty;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0">
         <DialogTitle className="sr-only">{item.name}</DialogTitle>
 
+        {/* Image */}
         <div
-          className="aspect-16/10 overflow-hidden"
-          style={{ backgroundColor: "#FFF7EC" }}
+          className="aspect-video overflow-hidden"
+          style={{ backgroundColor: "#F5F7FA" }}
         >
           {item.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -94,36 +144,30 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <ImageIcon size={48} style={{ color: "#E5B875" }} />
+              <ImageIcon size={40} style={{ color: "#6B7280" }} />
             </div>
           )}
         </div>
 
         <div className="p-5 space-y-5">
+          {/* Title */}
           <div>
-            <h2
-              className="text-2xl font-bold leading-tight"
-              style={{ color: "#1A1A1A", fontFamily: "var(--font-playfair)" }}
-            >
+            <h2 className="text-xl font-bold" style={{ color: "#1E1E1E" }}>
               {item.name}
             </h2>
             {item.description && (
-              <p
-                className="text-sm mt-1.5 leading-relaxed"
-                style={{ color: "#4A4A4A" }}
-              >
+              <p className="text-sm mt-1 leading-relaxed" style={{ color: "#4A4A4A" }}>
                 {item.description}
               </p>
             )}
           </div>
 
+          {/* Sizes */}
           {(item.sizes?.length ?? 0) > 0 && (
             <section>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-2"
-                style={{ color: "#94A3B8" }}
-              >
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] mb-2" style={{ color: "#4A4A4A" }}>
                 Size
-              </h3>
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {item.sizes!.map((sz) => {
                   const active = sz.name === sizeName;
@@ -132,21 +176,17 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
                       key={sz.id}
                       type="button"
                       onClick={() => setSizeName(sz.name)}
-                      className="flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                      className="flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-all"
                       style={{
-                        border: active
-                          ? "2px solid #FF5A3C"
-                          : "1.5px solid #ECECEC",
-                        backgroundColor: active ? "#FFF1ED" : "#FFFFFF",
-                        color: "#1A1A1A",
+                        border: active ? "1px solid #0F2B4D" : "1px solid #E5E7EB",
+                        backgroundColor: active ? "#F0F4FA" : "#FFFFFF",
+                        color: "#1E1E1E",
+                        borderRadius: 6,
                       }}
                     >
                       <span>{sz.name}</span>
                       {Number(sz.price_modifier) !== 0 && (
-                        <span
-                          className="text-xs tabular-nums"
-                          style={{ color: "#64748B" }}
-                        >
+                        <span className="text-xs tabular-nums" style={{ color: "#6B7280" }}>
                           {Number(sz.price_modifier) > 0 ? "+" : ""}$
                           {Number(sz.price_modifier).toFixed(2)}
                         </span>
@@ -158,13 +198,12 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
             </section>
           )}
 
+          {/* Extras */}
           {(item.extras?.length ?? 0) > 0 && (
             <section>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-2"
-                style={{ color: "#94A3B8" }}
-              >
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] mb-2" style={{ color: "#4A4A4A" }}>
                 Extras
-              </h3>
+              </p>
               <div className="space-y-1.5">
                 {item.extras!
                   .filter((e) => e.is_available)
@@ -173,12 +212,11 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
                     return (
                       <label
                         key={ex.id}
-                        className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer"
+                        className="flex items-center justify-between gap-3 px-3 py-2.5 cursor-pointer transition-all"
                         style={{
-                          border: active
-                            ? "1.5px solid #FF5A3C"
-                            : "1.5px solid #ECECEC",
-                          backgroundColor: active ? "#FFF1ED" : "#FFFFFF",
+                          border: active ? "1px solid #0F2B4D" : "1px solid #E5E7EB",
+                          backgroundColor: active ? "#F0F4FA" : "#FFFFFF",
+                          borderRadius: 6,
                         }}
                       >
                         <div className="flex items-center gap-2.5">
@@ -186,21 +224,15 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
                             type="checkbox"
                             checked={active}
                             onChange={(e) =>
-                              setExtrasOn((prev) => ({
-                                ...prev,
-                                [ex.id]: e.target.checked,
-                              }))
+                              setExtrasOn((prev) => ({ ...prev, [ex.id]: e.target.checked }))
                             }
-                            className="w-4 h-4 accent-[#FF5A3C]"
+                            style={{ accentColor: "#0F2B4D", width: 15, height: 15 }}
                           />
-                          <span className="text-sm" style={{ color: "#1A1A1A" }}>
+                          <span className="text-sm" style={{ color: "#1E1E1E" }}>
                             {ex.name}
                           </span>
                         </div>
-                        <span
-                          className="text-xs tabular-nums"
-                          style={{ color: "#64748B" }}
-                        >
+                        <span className="text-xs tabular-nums" style={{ color: "#6B7280" }}>
                           +${Number(ex.price).toFixed(2)}
                         </span>
                       </label>
@@ -210,60 +242,89 @@ export default function ItemDetailDialog({ item, open, onOpenChange }: Props) {
             </section>
           )}
 
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-2"
-              style={{ color: "#94A3B8" }}
-            >
-              Special instructions
-            </h3>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              placeholder="Allergies, preferences, extra sauces…"
-              style={{ backgroundColor: "#FFFFFF" }}
-            />
-          </section>
+          {/* Special instructions — only shown before first add */}
+          {!existingEntry && (
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] mb-2" style={{ color: "#4A4A4A" }}>
+                Special instructions
+              </p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                placeholder="Allergies, preferences, extra sauces…"
+                style={{
+                  width: "100%",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 4,
+                  padding: "0.625rem 0.875rem",
+                  fontSize: "0.875rem",
+                  color: "#1E1E1E",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  resize: "none",
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "#0F2B4D")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "#E5E7EB")}
+              />
+            </section>
+          )}
 
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-2 rounded-full px-2 py-1"
-              style={{ border: "1.5px solid #ECECEC" }}
+          {/* Footer: qty stepper + action */}
+          <div className="flex items-center justify-between gap-3 pt-1">
+            {/* Stepper */}
+            <div
+              className="inline-flex items-center"
+              style={{ border: "1px solid #E5E7EB", borderRadius: 6 }}
             >
               <button
                 type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ color: "#1A1A1A" }}
+                onClick={handleDecrease}
+                className="w-9 h-9 flex items-center justify-center transition-colors hover:bg-gray-50"
+                style={{ color: "#1E1E1E" }}
               >
-                <Minus size={15} />
+                <Minus size={14} />
               </button>
               <span
-                className="w-6 text-center font-semibold text-sm tabular-nums"
-                style={{ color: "#1A1A1A" }}
+                className="w-7 text-center font-semibold text-sm tabular-nums"
+                style={{ color: "#1E1E1E" }}
               >
-                {quantity}
+                {displayQty}
               </span>
               <button
                 type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ color: "#1A1A1A" }}
+                onClick={handleIncrease}
+                className="w-9 h-9 flex items-center justify-center transition-colors hover:bg-gray-50"
+                style={{ color: "#1E1E1E" }}
               >
-                <Plus size={15} />
+                <Plus size={14} />
               </button>
             </div>
 
-            <Button
-              onClick={handleAdd}
-              className="flex-1 rounded-full text-sm font-bold"
-              style={{
-                background: "linear-gradient(135deg, #FFB627 0%, #FF5A3C 100%)",
-                color: "#FFFFFF",
-                height: 44,
-              }}
-            >
-              Add to cart — ${lineTotal.toFixed(2)}
-            </Button>
+            {/* Action button — hidden when item is already in cart */}
+            {!existingEntry && (
+              <button
+                type="button"
+                onClick={handleAdd}
+                className="flex-1 font-semibold text-sm transition-opacity hover:opacity-90"
+                style={{
+                  backgroundColor: "#0F2B4D",
+                  color: "#FFFFFF",
+                  borderRadius: 6,
+                  height: 44,
+                }}
+              >
+                Add to cart — ${lineTotal.toFixed(2)}
+              </button>
+            )}
+
+            {/* When in cart: show live total */}
+            {existingEntry && (
+              <p className="text-sm font-bold tabular-nums" style={{ color: "#1E1E1E" }}>
+                ${lineTotal.toFixed(2)} in cart
+              </p>
+            )}
           </div>
         </div>
       </DialogContent>

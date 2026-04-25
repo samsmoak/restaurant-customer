@@ -158,6 +158,23 @@ export type GoCheckoutIntent = {
   currency: string;
 };
 
+export type GoPaymentMethod = {
+  id: string;
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+};
+
+export type GoSavedAddress = {
+  id: string;
+  label: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+};
+
 export type GoRealtimeEvent<T = unknown> = {
   type: 'order.created' | 'order.updated' | 'order.deleted' | 'ready' | 'error';
   order?: T;
