@@ -27,9 +27,12 @@ function timeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
+export type RestaurantStatus = 'open' | 'closed' | 'paused';
+
 type RestaurantState = {
   restaurant: GoRestaurant | null;
   isOpen: boolean;
+  status: RestaurantStatus;
   nextStatusChange: string;
   loading: boolean;
   error: string | null;
@@ -37,14 +40,15 @@ type RestaurantState = {
   recheck: () => void;
 };
 
-function compute(restaurant: GoRestaurant | null): { isOpen: boolean; nextStatusChange: string } {
-  if (!restaurant) return { isOpen: false, nextStatusChange: '' };
-  if (restaurant.manual_closed) return { isOpen: false, nextStatusChange: 'Closed by owner' };
+function compute(restaurant: GoRestaurant | null): { isOpen: boolean; status: RestaurantStatus; nextStatusChange: string } {
+  if (!restaurant) return { isOpen: false, status: 'closed', nextStatusChange: '' };
+  if (restaurant.orders_paused) return { isOpen: true, status: 'paused', nextStatusChange: 'Not accepting orders right now' };
+  if (restaurant.manual_closed) return { isOpen: false, status: 'closed', nextStatusChange: 'Closed by owner' };
 
   const now = new Date();
   const currentDay = DAY_MAP[now.getDay()];
   const hours = restaurant.opening_hours[currentDay];
-  if (!hours) return { isOpen: false, nextStatusChange: '' };
+  if (!hours) return { isOpen: false, status: 'closed' as RestaurantStatus, nextStatusChange: '' };
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -53,10 +57,10 @@ function compute(restaurant: GoRestaurant | null): { isOpen: boolean; nextStatus
       const nextIdx = (now.getDay() + i) % 7;
       const nextHours = restaurant.opening_hours[DAY_MAP[nextIdx]];
       if (nextHours && !nextHours.closed) {
-        return { isOpen: false, nextStatusChange: `Opens ${dayNames[nextIdx]} at ${nextHours.open}` };
+        return { isOpen: false, status: 'closed' as RestaurantStatus, nextStatusChange: `Opens ${dayNames[nextIdx]} at ${nextHours.open}` };
       }
     }
-    return { isOpen: false, nextStatusChange: '' };
+    return { isOpen: false, status: 'closed' as RestaurantStatus, nextStatusChange: '' };
   }
 
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -68,7 +72,7 @@ function compute(restaurant: GoRestaurant | null): { isOpen: boolean; nextStatus
     const closeM = closeMin % 60;
     const period = closeH >= 12 ? 'PM' : 'AM';
     const display = closeH > 12 ? closeH - 12 : closeH;
-    return { isOpen: true, nextStatusChange: `Closes at ${display}:${closeM.toString().padStart(2, '0')} ${period}` };
+    return { isOpen: true, status: 'open' as RestaurantStatus, nextStatusChange: `Closes at ${display}:${closeM.toString().padStart(2, '0')} ${period}` };
   }
 
   if (currentMinutes < openMin) {
@@ -76,22 +80,23 @@ function compute(restaurant: GoRestaurant | null): { isOpen: boolean; nextStatus
     const openMMin = openMin % 60;
     const period = openH >= 12 ? 'PM' : 'AM';
     const display = openH > 12 ? openH - 12 : openH;
-    return { isOpen: false, nextStatusChange: `Opens at ${display}:${openMMin.toString().padStart(2, '0')} ${period}` };
+    return { isOpen: false, status: 'closed' as RestaurantStatus, nextStatusChange: `Opens at ${display}:${openMMin.toString().padStart(2, '0')} ${period}` };
   }
 
   for (let i = 1; i <= 7; i++) {
     const nextIdx = (now.getDay() + i) % 7;
     const nextHours = restaurant.opening_hours[DAY_MAP[nextIdx]];
     if (nextHours && !nextHours.closed) {
-      return { isOpen: false, nextStatusChange: `Opens ${dayNames[nextIdx]} at ${nextHours.open}` };
+      return { isOpen: false, status: 'closed' as RestaurantStatus, nextStatusChange: `Opens ${dayNames[nextIdx]} at ${nextHours.open}` };
     }
   }
-  return { isOpen: false, nextStatusChange: '' };
+  return { isOpen: false, status: 'closed' as RestaurantStatus, nextStatusChange: '' };
 }
 
 export const useRestaurantStore = create<RestaurantState>((set, get) => ({
   restaurant: null,
   isOpen: false,
+  status: 'closed' as RestaurantStatus,
   nextStatusChange: '',
   loading: false,
   error: null,

@@ -12,6 +12,7 @@ import type { RestaurantSettings } from '@/types';
 export function useRestaurantStatus() {
   const restaurant = useRestaurantStore((s) => s.restaurant);
   const isOpen = useRestaurantStore((s) => s.isOpen);
+  const status = useRestaurantStore((s) => s.status);
   const nextStatusChange = useRestaurantStore((s) => s.nextStatusChange);
   const loading = useRestaurantStore((s) => s.loading);
   const fetchFn = useRestaurantStore((s) => s.fetch);
@@ -45,5 +46,5 @@ export function useRestaurantStatus() {
       }
     : null;
 
-  return { settings, isOpen, nextStatusChange, loading };
+  return { settings, isOpen, status, nextStatusChange, loading };
 }

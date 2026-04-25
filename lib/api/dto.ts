@@ -21,6 +21,7 @@ export type GoRestaurant = {
   currency: string;
   opening_hours: Record<string, { open: string; close: string; closed: boolean }>;
   manual_closed: boolean;
+  orders_paused?: boolean;
 };
 
 export type GoMenuSize = {

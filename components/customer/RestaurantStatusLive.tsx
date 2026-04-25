@@ -8,7 +8,7 @@ interface RestaurantStatusLiveProps {
 }
 
 export default function RestaurantStatusLive({ size = "md" }: RestaurantStatusLiveProps) {
-  const { isOpen, nextStatusChange, loading } = useRestaurantStatus();
+  const { isOpen, status, nextStatusChange, loading } = useRestaurantStatus();
 
   if (loading) {
     return (
@@ -32,6 +32,7 @@ export default function RestaurantStatusLive({ size = "md" }: RestaurantStatusLi
   return (
     <RestaurantStatus
       isOpen={isOpen}
+      status={status}
       nextStatusChange={nextStatusChange}
       size={size}
     />
