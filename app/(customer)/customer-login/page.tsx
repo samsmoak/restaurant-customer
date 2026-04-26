@@ -13,65 +13,70 @@ export default async function CustomerLoginPage({
   searchParams: SearchParams;
 }) {
   const { next } = await searchParams;
-  const gateMessage = next === "/checkout"
-    ? "Sign in or create an account to complete your order."
-    : null;
+  const gateMessage =
+    next === "/checkout"
+      ? "Sign in or create an account to complete your order."
+      : null;
 
   return (
     <main
-      className="min-h-screen flex items-center justify-center px-4 py-24 relative overflow-hidden"
-      style={{ backgroundColor: "#FFFFFF" }}
+      className="min-h-screen flex items-center justify-center px-4 py-24"
+      style={{ backgroundColor: "#F5F7FA" }}
     >
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 20%, rgba(255, 90, 60, 0.18) 0%, transparent 45%), radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 45%)",
-        }}
-      />
-      <div
-        className="relative w-full max-w-md rounded-3xl p-8"
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "2px solid rgba(255, 90, 60, 0.18)",
-          boxShadow: "0 20px 60px rgba(17, 17, 17, 0.08)",
-        }}
-      >
-        <div className="text-center mb-6">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.2em] mb-3"
+            style={{ color: "#0F2B4D" }}
+          >
+            Ember &amp; Forge
+          </p>
           <h1
-            className="text-3xl font-bold mb-2"
-            style={{ fontFamily: "var(--font-playfair)", color: "#1A1A1A" }}
+            className="text-4xl font-bold mb-2"
+            style={{ color: "#1A1A1A" }}
           >
             Welcome{" "}
             <em
               className="italic"
               style={{
-                backgroundImage:
-                  "linear-gradient(90deg, #FFB627 0%, #FF5A3C 100%)",
+                backgroundImage: "linear-gradient(105deg, #1A4A8A 0%, #0F2B4D 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
               }}
             >
               back
             </em>
           </h1>
-          <p className="text-sm" style={{ color: "#4A4A4A" }}>
-            Sign in to your Ember &amp; Forge account.
+          <p className="text-sm" style={{ color: "#6B7280" }}>
+            Sign in to your account to continue.
           </p>
           {gateMessage && (
             <div
-              className="mt-4 text-sm px-3 py-2 rounded-lg"
+              className="mt-4 text-sm px-4 py-3 rounded-lg"
               style={{
-                backgroundColor: "rgba(255, 182, 39, 0.12)",
-                color: "#A16207",
-                border: "1px solid rgba(255, 182, 39, 0.4)",
+                backgroundColor: "rgba(15,43,77,0.06)",
+                color: "#0F2B4D",
+                border: "1px solid rgba(15,43,77,0.2)",
               }}
             >
               {gateMessage}
             </div>
           )}
         </div>
-        <CustomerLoginForm />
+
+        {/* Card */}
+        <div
+          className="p-8 rounded-2xl"
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E5E7EB",
+            boxShadow: "0 4px 24px rgba(15,43,77,0.08)",
+          }}
+        >
+          <CustomerLoginForm />
+        </div>
       </div>
     </main>
   );

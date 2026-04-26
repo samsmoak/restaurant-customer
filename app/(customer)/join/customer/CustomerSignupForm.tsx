@@ -261,11 +261,10 @@ function Inner() {
       <button
         type="submit"
         disabled={loading || emailExists}
-        className="w-full py-3 rounded-full font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
+        className="w-full py-3 rounded-lg font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
         style={{
-          background: "linear-gradient(135deg, #FFB627 0%, #FF5A3C 100%)",
+          backgroundColor: "#0F2B4D",
           color: "#FFFFFF",
-          boxShadow: "0 8px 20px rgba(255, 90, 60, 0.3)",
         }}
       >
         {loading ? "Creating account..." : "Create account"}
@@ -276,7 +275,7 @@ function Inner() {
         <Link
           href={`/customer-login?next=${encodeURIComponent(next)}`}
           className="underline font-semibold"
-          style={{ color: "#FF5A3C" }}
+          style={{ color: "#0F2B4D" }}
         >
           Sign in
         </Link>
@@ -286,17 +285,17 @@ function Inner() {
         .light-input {
           width: 100%;
           padding: 0.7rem 1rem;
-          border-radius: 0.75rem;
+          border-radius: 0.5rem;
           font-size: 0.875rem;
           outline: none;
           background-color: #ffffff;
           color: #1a1a1a;
-          border: 1.5px solid #ececec;
-          transition: border-color 0.2s, box-shadow 0.2s;
+          border: 1px solid #e5e7eb;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
         .light-input:focus {
-          border-color: #ff5a3c;
-          box-shadow: 0 0 0 3px rgba(255, 90, 60, 0.12);
+          border-color: #0f2b4d;
+          box-shadow: 0 0 0 3px rgba(15, 43, 77, 0.1);
         }
         .light-input::placeholder {
           color: #9ca3af;
@@ -317,7 +316,7 @@ function Field({
     <div>
       <label
         className="block text-sm font-semibold mb-1.5"
-        style={{ color: "#1A1A1A" }}
+        style={{ color: "#374151" }}
       >
         {label}
       </label>
@@ -329,14 +328,14 @@ function Field({
 function OrDivider() {
   return (
     <div className="flex items-center gap-3 my-4">
-      <div className="flex-1 h-px" style={{ background: "#ECECEC" }} />
+      <div className="flex-1 h-px" style={{ background: "#E5E7EB" }} />
       <span
         className="text-xs font-semibold tracking-[0.2em]"
         style={{ color: "#9CA3AF" }}
       >
         OR
       </span>
-      <div className="flex-1 h-px" style={{ background: "#ECECEC" }} />
+      <div className="flex-1 h-px" style={{ background: "#E5E7EB" }} />
     </div>
   );
 }
